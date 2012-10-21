@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import threading
 import Queue
@@ -30,10 +31,11 @@ class Spider(threading.Thread):
 
                 callable, args, kwds = self.work_queue.get(timeout=self.timeout)
                 print "get a new task from queue"
+
                 # get all links in the given url with specified depth
-                for link,r_depth in callable(*args, **kwds):
+                for link,r_depth,db_connect,keyword in callable(*args, **kwds):
                     if link:
-                        self.work_queue.put((callable, (link, r_depth), {}))
+                        self.work_queue.put((callable, (link, r_depth, db_connect, keyword), {}))
                         self.condition.notifyAll()
                         print "notifyAll"
                 self.work_queue.task_done()
@@ -53,4 +55,3 @@ class Spider(threading.Thread):
                     self.work_queue.all_tasks_done.release()
                     self.condition.wait
                     continue
-
