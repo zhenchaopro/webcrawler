@@ -39,6 +39,18 @@ class Spider(threading.Thread):
                 self.work_queue.task_done()
                 self.condition.release()
             except Queue.Empty:
-                print "No task in queue , try again..."
-                self.condition.wait()
-                continue
+                # acquire the task_done condition of work_queue
+                self.work_queue.all_tasks_done.acquire()
+                # if all the task in work_queue has been done, break the main loop
+                if not self.work_queue.unfinished_tasks:
+                    print "All task has been done"
+                    self.work_queue.all_tasks_done.release()
+                    self.condition.release()
+                    break
+                else:
+                    # at least one of the spiders are processing task, while the queue is empty
+                    print "Queue is empty, but other threads are in procedure. wait..."
+                    self.work_queue.all_tasks_done.release()
+                    self.condition.wait
+                    continue
+

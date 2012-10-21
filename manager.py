@@ -56,10 +56,8 @@ class Manager():
 
     def poll(self):
         """wait for all task to be done"""
-        self.work_queue.join()
-
         for worker in self.workers:
-            worker.join()
+                worker.join()
 
         print "All jobs has been done."
 
