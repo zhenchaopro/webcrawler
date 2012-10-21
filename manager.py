@@ -87,6 +87,15 @@ class Manager():
 
     def poll(self):
         """wait for all task to be done"""
+        self.work_queue.join()
+
+        # where all the tasks have been done, there is some threads still
+        # block on condition, so notifyAll
+        self.condition.acquire()
+        self.condition.notifyAll()
+        self.condition.release()
+        logging.info("manager notifyAll")
+
         for worker in self.workers:
                 worker.join()
 
