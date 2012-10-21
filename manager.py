@@ -7,7 +7,9 @@ import urlparse
 import threading
 import sqlite3
 import re
+import logging
 import HTMLParser
+import httplib
 
 from bs4 import BeautifulSoup
 
@@ -25,7 +27,7 @@ def crawl(url, depth, db_connect, keyword=None, sql="INSERT INTO MATCH_PAGE VALU
         if keyword:
             keyword_re = re.compile(ur'.*%s.*' % keyword.decode('utf8'), re.UNICODE)
             if soup.find(text=keyword_re):
-                print "Find a match page."
+                logging.info("Find a match page.")
                 cursor.execute(sql, (url, depth, unicode(soup)))
         else:
             cursor.execute(sql, (url, depth, unicode(soup)))
@@ -40,10 +42,10 @@ def crawl(url, depth, db_connect, keyword=None, sql="INSERT INTO MATCH_PAGE VALU
 
                     if parsed_link[:4] != 'http' and parsed_link[:5] != 'https':
                         continue
-                    print "parsed_link: %s" % parsed_link
+                    logging.info("parsed_link: %s" % parsed_link)
                     yield parsed_link, depth-1, db_connect, keyword
-    except (urllib2.URLError, HTMLParser.HTMLParseError), e:
-        print str(e)
+    except (urllib2.URLError, HTMLParser.HTMLParseError, httplib.BadStatusLine), e:
+        logging.info(str(e))
         yield None, None, None, None
 
 class Manager():
@@ -88,9 +90,9 @@ class Manager():
         for worker in self.workers:
                 worker.join()
 
-        print "All jobs has been done."
+        logging.info("All jobs has been done.")
 
     def add_job(self, callable, *args, **kwds):
         """Add a new job to work_queue"""
         self.work_queue.put((callable, args, kwds))
-        print "add a new job"
+        logging.info("add a new job")
