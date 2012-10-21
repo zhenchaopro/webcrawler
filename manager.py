@@ -3,6 +3,8 @@
 import Queue
 import urllib2
 import urlparse
+import threading
+import HTMLParser
 
 from bs4 import BeautifulSoup
 
@@ -28,6 +30,9 @@ def crawl(url, depth):
     except urllib2.URLError, e:
         print str(e)
         yield None, None
+    except HTMLParser.HTMLParseError, e:
+        print str(e)
+        yield None,None
 
 
 class Manager():
@@ -36,6 +41,7 @@ class Manager():
     def __init__(self, url, depth=2, number_of_workers=10, timeout=0):
         self.work_queue = Queue.Queue()
         self.result_queue = Queue.Queue()
+        self.condition = threading.Condition()
         self.workers = []
         self.timeout = timeout
         self.add_job(crawl, url, depth)
@@ -44,7 +50,8 @@ class Manager():
     def _add_workers(self, number_of_workers):
         """docstring for _add"""
         for i in range(number_of_workers):
-            worker = spider.Spider(self.work_queue, self.result_queue, self.timeout)
+            worker = spider.Spider(self.work_queue, self.result_queue,
+                    self.condition, self.timeout)
             self.workers.append(worker)
 
     def poll(self):
@@ -52,7 +59,6 @@ class Manager():
         self.work_queue.join()
 
         for worker in self.workers:
-            worker.dismissed.set()
             worker.join()
 
         print "All jobs has been done."
